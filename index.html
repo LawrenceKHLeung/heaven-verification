@@ -1,37 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>He@ven Product Verification</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; }
-    .scanner-box { border: 2px dashed #ccc; padding: 1rem; text-align: center; }
-    #result { margin-top: 1rem; padding: 1rem; border-radius: 4px; }
-    .genuine { background: #e8f5e9; color: #2e7d32; }
-    .fake { background: #ffebee; color: #c62828; }
-  </style>
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-  <h1>He@ven Product Verification System</h1>
-  
-  <!-- QR Scan Zone -->
-  <div class="scanner-box">
-    <input type="file" id="qrInput" accept="image/*" hidden>
-    <label for="qrInput" style="cursor: pointer;">
-      <img src="upload-icon.png" width="50"><br>
-      Click to upload QR code
-    </label>
-    <div id="qrPreview"></div>
+  <div class="container">
+    <img src="assets/images/verified-badge.png" class="verified-badge">
+    
+    <div class="product-info">
+      <h1>Made in <span class="heaven">He@ven</span></h1>
+      
+      <div class="detail-row">
+        <span class="label">Serial Number:</span>
+        <span id="serial" class="value"></span>
+      </div>
+      
+      <div class="detail-row">
+        <span class="label">Model:</span>
+        <span id="model" class="value"></span>
+      </div>
+      
+      <div class="detail-row">
+        <span class="label">Production Date:</span>
+        <span id="date" class="value"></span>
+      </div>
+      
+      <a id="txLink" target="_blank" class="tx-link">
+        View Blockchain Registration
+      </a>
+    </div>
   </div>
 
-  <!-- Verification Result -->
-  <div id="result"></div>
-
-  <!-- Dependencies -->
   <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
-  <script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.min.js"></script>
-
   <script>
-    // Initialize Contract Configuration
+    // 从URL获取参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const serial = urlParams.get('serial');
+
+    // 合约配置
     const contractAddress = "0x312ED575127Fe091a3f3370Af58AD9243A879c1F";
     const contractABI = [
 	{
@@ -209,74 +218,39 @@
 	}
 ];
 
-    // Connect MetaMask
-    async function connectWallet() {
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-      return new ethers.providers.Web3Provider(window.ethereum);
-    }
-
-    // QR Code Scan
-    async function scanQRCode(file) {
-      const scanner = new QrScanner(
-        await QrScanner.createCanvas(),
-        result => handleScanResult(result)
-      );
-      return scanner.scan(file);
-    }
-
-    // Handle Scan Result
-    async function handleScanResult(data) {
+    async function loadProductInfo() {
       try {
-        const productInfo = JSON.parse(data);
-        const provider = await connectWallet();
-        const contract = new ethers.Contract(
-          contractAddress,
-          contractABI,
-          provider.getSigner()
-        );
+        const provider = new ethers.providers.EtherscanProvider('sepolia');
+        const contract = new ethers.Contract(contractAddress, contractABI, provider);
 
-        const [maker, model, date, genuine] = 
-          await contract.verifyProduct(productInfo.serial);
+        // 获取产品信息
+        const [maker, model, date, genuine] = await contract.verifyProduct(serial);
+        
+        // 显示信息
+        document.getElementById('serial').textContent = serial;
+        document.getElementById('model').textContent = model;
+        document.getElementById('date').textContent = date;
 
-        showResult({
-          manufacturer: maker,
-          model: model,
-          productionDate: date,
-          status: genuine ? "✅ genuine" : "❌ fake",
-          statusClass: genuine ? "genuine" : "fake"
-        });
-      } catch (error) {
-        showResult({
-          status: "⚠️ Unable to verify: Invalid QR Code or network error",
-          statusClass: "error"
-        });
-      }
-    }
-
-    // Show Result
-    function showResult(data) {
-      const resultDiv = document.getElementById("result");
-      resultDiv.className = data.statusClass;
-      resultDiv.innerHTML = `
-        <h3>Verification Result：${data.status}</h3>
-        ${data.manufacturer ? `
-          <p>Manufacturer：${data.manufacturer}</p>
-          <p>Model：${data.model}</p>
-          <p>Production Date：${data.productionDate}</p>
-        ` : ""}
-      `;
-    }
-
-    // File Upload Monitor
-    document.getElementById("qrInput").addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const result = await scanQRCode(file);
-        if (!result) {
-          showResult({ status: "No valid QR Code detected", statusClass: "error" });
+        // 获取注册交易记录
+        const filter = contract.filters.ProductRegistered(serial);
+        const events = await contract.queryFilter(filter);
+        if(events[0]) {
+          const txHash = events[0].transactionHash;
+          document.getElementById('txLink').href = 
+            `https://sepolia.etherscan.io/tx/${txHash}`;
         }
+      } catch (error) {
+        document.body.innerHTML = `
+          <div class="error">
+            <h2>⚠️ Verification Failed</h2>
+            <p>This product cannot be verified</p>
+            <a href="check.html">Try Manual Check</a>
+          </div>
+        `;
       }
-    });
+    }
+
+    window.onload = loadProductInfo;
   </script>
 </body>
 </html>
