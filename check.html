@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>He@ven Product Check</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="check-form">
+      <img src="assets/images/logo.png" class="logo">
+      <h1>Verify Your Product</h1>
+      
+      <input type="number" id="serialInput" 
+             placeholder="Enter Product Serial Number">
+      <button onclick="checkProduct()">Verify Now</button>
+      
+      <div id="result" class="result-card"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+  <script>
+    const contractAddress = "0x312ED575127Fe091a3f3370Af58AD9243A879c1F";
+    const contractABI = [
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "serial",
+				"type": "uint256"
+			}
+		],
+		"name": "FakeReported",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "serial",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "model",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "date",
+				"type": "string"
+			}
+		],
+		"name": "ProductRegistered",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_serial",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_model",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_date",
+				"type": "string"
+			}
+		],
+		"name": "registerProduct",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_serial",
+				"type": "uint256"
+			}
+		],
+		"name": "reportFake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "MANUFACTURER",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "products",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "serialNumber",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "model",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "productionDate",
+				"type": "string"
+			},
+			{
+				"internalType": "bool",
+				"name": "isGenuine",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_serial",
+				"type": "uint256"
+			}
+		],
+		"name": "verifyProduct",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+    async function checkProduct() {
+      const serial = document.getElementById('serialInput').value;
+      if(!serial) return;
+
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        
+        const contract = new ethers.Contract(
+          contractAddress, 
+          contractABI,
+          provider
+        );
+
+        const [maker, model, date, genuine] = 
+          await contract.verifyProduct(serial);
+
+        window.location.href = `product.html?serial=${serial}`;
+      } catch (error) {
+        document.getElementById('result').innerHTML = `
+          <div class="error">
+            <p>Verification failed: ${error.message}</p>
+            <p>Please check:</p>
+            <ul>
+              <li>Correct serial number</li>
+              <li>MetaMask connection</li>
+              <li>Sepolia network</li>
+            </ul>
+          </div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
