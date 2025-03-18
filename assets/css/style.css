@@ -1,99 +1,81 @@
-/* 通用样式 */
+/* 基础样式 */
+:root {
+  --primary: #2196F3;
+  --success: #4CAF50;
+  --error: #F44336;
+}
+
 body {
   font-family: 'Arial', sans-serif;
-  background: #f8f9fa;
   margin: 0;
   padding: 20px;
+  background: #f8f9fa;
 }
 
 .container {
-  max-width: 600px;
-  margin: 20px auto;
+  max-width: 800px;
+  margin: 0 auto;
   background: white;
   padding: 30px;
   border-radius: 15px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 15px rgba(0,0,0,0.1);
 }
 
-/* 正品展示页 */
-.verified-badge {
+/* 验证结果页 */
+.verification-result {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.badge {
   width: 120px;
-  display: block;
-  margin: 0 auto 30px;
+  margin-bottom: 30px;
 }
 
-.heaven {
-  color: #2196F3;
-  font-weight: 700;
+.product-details {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 25px;
+  margin: 20px 0;
 }
 
-.detail-row {
+.detail-item {
+  display: flex;
+  justify-content: space-between;
   margin: 15px 0;
   padding: 12px;
-  background: #f8f9fa;
+  background: white;
   border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
-.label {
-  display: inline-block;
-  width: 140px;
-  color: #666;
-}
-
-.value {
-  font-weight: 500;
-  color: #333;
-}
-
-.tx-link {
+.blockchain-link {
   display: block;
   margin-top: 30px;
   padding: 12px;
-  background: #2196F3;
+  background: var(--primary);
   color: white;
-  text-align: center;
-  border-radius: 8px;
   text-decoration: none;
+  border-radius: 8px;
   transition: background 0.3s;
 }
 
-.tx-link:hover {
+.blockchain-link:hover {
   background: #1976D2;
 }
 
-/* 手动查询页 */
-.check-form {
-  text-align: center;
-}
-
-input[type="number"] {
-  width: 100%;
-  padding: 12px;
-  margin: 15px 0;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
-}
-
-button {
-  background: #4CAF50;
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background 0.3s;
-}
-
-button:hover {
-  background: #45a049;
-}
-
-.error {
-  color: #dc3545;
-  padding: 15px;
-  background: #ffeef0;
-  border-radius: 8px;
-  margin-top: 20px;
+/* 移动端优化 */
+@media (max-width: 480px) {
+  .container {
+    padding: 15px;
+    border-radius: 0;
+  }
+  
+  .product-details {
+    padding: 15px;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+  }
 }
