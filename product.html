@@ -5,42 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>He@ven Product Verification</title>
   <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <img src="assets/images/verified-badge.png" class="verified-badge">
-    
-    <div class="product-info">
-      <h1>Made in <span class="heaven">He@ven</span></h1>
+    <div class="verification-result">
+      <img src="assets/images/verified-badge.png" class="badge">
       
-      <div class="detail-row">
-        <span class="label">Serial Number:</span>
-        <span id="serial" class="value"></span>
+      <div class="product-details">
+        <h1>Made in <span class="heaven">He@ven</span></h1>
+        
+        <div class="detail-item">
+          <label>Serial:</label>
+          <span id="serial"></span>
+        </div>
+        
+        <div class="detail-item">
+          <label>Model:</label>
+          <span id="model"></span>
+        </div>
+        
+        <div class="detail-item">
+          <label>Production Date:</label>
+          <span id="date"></span>
+        </div>
+        
+        <a id="txLink" target="_blank" class="blockchain-link">
+          View Blockchain Record
+        </a>
       </div>
-      
-      <div class="detail-row">
-        <span class="label">Model:</span>
-        <span id="model" class="value"></span>
-      </div>
-      
-      <div class="detail-row">
-        <span class="label">Production Date:</span>
-        <span id="date" class="value"></span>
-      </div>
-      
-      <a id="txLink" target="_blank" class="tx-link">
-        View Blockchain Registration
-      </a>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js"></script>
   <script>
-    // 从URL获取参数
-    const urlParams = new URLSearchParams(window.location.search);
-    const serial = urlParams.get('serial');
-
-    // 合约配置
     const contractAddress = "0x312ED575127Fe091a3f3370Af58AD9243A879c1F";
     const contractABI = [
 	{
@@ -218,39 +215,39 @@
 	}
 ];
 
-    async function loadProductInfo() {
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const serial = params.get('serial');
+
       try {
-        const provider = new ethers.providers.EtherscanProvider('sepolia');
+        const provider = new ethers.EtherscanProvider('sepolia');
         const contract = new ethers.Contract(contractAddress, contractABI, provider);
-
-        // 获取产品信息
-        const [maker, model, date, genuine] = await contract.verifyProduct(serial);
         
-        // 显示信息
+        // 获取产品信息
+        const result = await contract.verifyProduct(serial);
         document.getElementById('serial').textContent = serial;
-        document.getElementById('model').textContent = model;
-        document.getElementById('date').textContent = date;
+        document.getElementById('model').textContent = result[1];
+        document.getElementById('date').textContent = result[2];
 
-        // 获取注册交易记录
+        // 获取交易记录
         const filter = contract.filters.ProductRegistered(serial);
-        const events = await contract.queryFilter(filter);
-        if(events[0]) {
-          const txHash = events[0].transactionHash;
+        const logs = await contract.queryFilter(filter);
+        if(logs[0]) {
           document.getElementById('txLink').href = 
-            `https://sepolia.etherscan.io/tx/${txHash}`;
+            `https://sepolia.etherscan.io/tx/${logs[0].transactionHash}`;
         }
       } catch (error) {
         document.body.innerHTML = `
-          <div class="error">
-            <h2>⚠️ Verification Failed</h2>
-            <p>This product cannot be verified</p>
-            <a href="check.html">Try Manual Check</a>
+          <div class="error-page">
+            <h2>Verification Failed</h2>
+            <p>This product cannot be authenticated</p>
+            <a href="check.html">Try Manual Verification</a>
           </div>
         `;
       }
     }
 
-    window.onload = loadProductInfo;
+    window.onload = init;
   </script>
 </body>
 </html>
