@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>He@ven Product Verification</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; }
+    .scanner-box { border: 2px dashed #ccc; padding: 1rem; text-align: center; }
+    #result { margin-top: 1rem; padding: 1rem; border-radius: 4px; }
+    .genuine { background: #e8f5e9; color: #2e7d32; }
+    .fake { background: #ffebee; color: #c62828; }
+  </style>
+</head>
+<body>
+  <h1>He@ven Product Verification System</h1>
+  
+  <!-- QR Scan Zone -->
+  <div class="scanner-box">
+    <input type="file" id="qrInput" accept="image/*" hidden>
+    <label for="qrInput" style="cursor: pointer;">
+      <img src="upload-icon.png" width="50"><br>
+      Click to upload QR code
+    </label>
+    <div id="qrPreview"></div>
+  </div>
+
+  <!-- Verification Result -->
+  <div id="result"></div>
+
+  <!-- Dependencies -->
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+  <script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.min.js"></script>
+
+  <script>
+    // Initialize Contract Configuration
+    const contractAddress = "0x312ED575127Fe091a3f3370Af58AD9243A879c1F";
+    const contractABI = [
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "serial",
+				"type": "uint256"
+			}
+		],
+		"name": "FakeReported",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "serial",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "model",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "date",
+				"type": "string"
+			}
+		],
+		"name": "ProductRegistered",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_serial",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_model",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_date",
+				"type": "string"
+			}
+		],
+		"name": "registerProduct",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_serial",
+				"type": "uint256"
+			}
+		],
+		"name": "reportFake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "MANUFACTURER",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "products",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "serialNumber",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "model",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "productionDate",
+				"type": "string"
+			},
+			{
+				"internalType": "bool",
+				"name": "isGenuine",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_serial",
+				"type": "uint256"
+			}
+		],
+		"name": "verifyProduct",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+    // Connect MetaMask
+    async function connectWallet() {
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      return new ethers.providers.Web3Provider(window.ethereum);
+    }
+
+    // QR Code Scan
+    async function scanQRCode(file) {
+      const scanner = new QrScanner(
+        await QrScanner.createCanvas(),
+        result => handleScanResult(result)
+      );
+      return scanner.scan(file);
+    }
+
+    // Handle Scan Result
+    async function handleScanResult(data) {
+      try {
+        const productInfo = JSON.parse(data);
+        const provider = await connectWallet();
+        const contract = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          provider.getSigner()
+        );
+
+        const [maker, model, date, genuine] = 
+          await contract.verifyProduct(productInfo.serial);
+
+        showResult({
+          manufacturer: maker,
+          model: model,
+          productionDate: date,
+          status: genuine ? "✅ genuine" : "❌ fake",
+          statusClass: genuine ? "genuine" : "fake"
+        });
+      } catch (error) {
+        showResult({
+          status: "⚠️ Unable to verify: Invalid QR Code or network error",
+          statusClass: "error"
+        });
+      }
+    }
+
+    // Show Result
+    function showResult(data) {
+      const resultDiv = document.getElementById("result");
+      resultDiv.className = data.statusClass;
+      resultDiv.innerHTML = `
+        <h3>Verification Result：${data.status}</h3>
+        ${data.manufacturer ? `
+          <p>Manufacturer：${data.manufacturer}</p>
+          <p>Model：${data.model}</p>
+          <p>Production Date：${data.productionDate}</p>
+        ` : ""}
+      `;
+    }
+
+    // File Upload Monitor
+    document.getElementById("qrInput").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const result = await scanQRCode(file);
+        if (!result) {
+          showResult({ status: "No valid QR Code detected", statusClass: "error" });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
