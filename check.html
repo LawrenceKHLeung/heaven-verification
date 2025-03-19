@@ -2,235 +2,88 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>He@ven Product Check</title>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <title>Product Verification</title>
+  <!-- Include Web3.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="check-form">
-      <img src="assets/images/logo.jpg" class="logo">
-      <h1>Verify Your Product</h1>
-      
-      <input type="number" id="serialInput" 
-             placeholder="Enter Product Serial Number">
-      <button onclick="checkProduct()">Verify Now</button>
-      
-      <div id="result" class="result-card"></div>
-    </div>
-  </div>
+  <h1>Product Verification</h1>
+  <h2 id="manufacturer">Verify products from [loading...]</h2>
+  <form id="verifyForm">
+    <label for="serial">Serial Number:</label>
+    <input type="text" id="serial" name="serial" placeholder="e.g., 1001">
+    <button type="submit">Verify</button>
+  </form>
+  <div id="result"></div>
 
-  <script src="assets/js/ethers.umd.min.js"></script>
   <script>
-    const contractAddress = "0x312ED575127Fe091a3f3370Af58AD9243A879c1F";
+    // Initialize Web3 with Sepolia public RPC provider
+    const web3 = new Web3('https://rpc.sepolia.org');
+
+    // Smart contract address
+    const contractAddress = '0x312ED575127Fe091a3f3370Af58AD9243A879c1F';
+
+    // Contract ABI
     const contractABI = [
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "serial",
-				"type": "uint256"
-			}
-		],
-		"name": "FakeReported",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "serial",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "model",
-				"type": "string"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "date",
-				"type": "string"
-			}
-		],
-		"name": "ProductRegistered",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_serial",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "_model",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "_date",
-				"type": "string"
-			}
-		],
-		"name": "registerProduct",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_serial",
-				"type": "uint256"
-			}
-		],
-		"name": "reportFake",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "MANUFACTURER",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "owner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "products",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "serialNumber",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "model",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "productionDate",
-				"type": "string"
-			},
-			{
-				"internalType": "bool",
-				"name": "isGenuine",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_serial",
-				"type": "uint256"
-			}
-		],
-		"name": "verifyProduct",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			},
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-];
+      {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+      {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"serial","type":"uint256"}],"name":"FakeReported","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"serial","type":"uint256"},{"indexed":false,"internalType":"string","name":"model","type":"string"},{"indexed":false,"internalType":"string","name":"date","type":"string"}],"name":"ProductRegistered","type":"event"},
+      {"inputs":[],"name":"MANUFACTURER","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"products","outputs":[{"internalType":"uint256","name":"serialNumber","type":"uint256"},{"internalType":"string","name":"model","type":"string"},{"internalType":"string","name":"productionDate","type":"string"},{"internalType":"bool","name":"isGenuine","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_serial","type":"uint256"},{"internalType":"string","name":"_model","type":"string"},{"internalType":"string","name":"_date","type":"string"}],"name":"registerProduct","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_serial","type":"uint256"}],"name":"reportFake","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_serial","type":"uint256"}],"name":"verifyProduct","outputs":[{"internalType":"string","name":"","type":"string"},{"internalType":"string","name":"","type":"string"},{"internalType":"string","name":"","type":"string"},{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}
+    ];
 
-    async function checkProduct() {
-      const serial = document.getElementById('serialInput').value;
-      if(!serial) return;
+    // Instantiate the contract
+    const contract = new web3.eth.Contract(contractABI, contractAddress);
 
+    // Load manufacturer name on page load
+    async function loadManufacturer() {
       try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        
-        const contract = new ethers.Contract(
-          contractAddress, 
-          contractABI,
-          provider
-        );
-
-        const [maker, model, date, genuine] = 
-          await contract.verifyProduct(serial);
-
-        window.location.href = `product.html?serial=${serial}`;
+        const manufacturer = await contract.methods.MANUFACTURER().call();
+        document.getElementById('manufacturer').innerText = `Verify products from ${manufacturer}`;
       } catch (error) {
-        document.getElementById('result').innerHTML = `
-          <div class="error">
-            <p>Verification failed: ${error.message}</p>
-            <p>Please check:</p>
-            <ul>
-              <li>Correct serial number</li>
-              <li>MetaMask connection</li>
-              <li>Sepolia network</li>
-            </ul>
-          </div>
-        `;
+        console.error('Error loading manufacturer:', error);
+        document.getElementById('manufacturer').innerText = 'Error loading manufacturer';
       }
     }
+
+    // Call loadManufacturer when the page loads
+    window.addEventListener('load', loadManufacturer);
+
+    // Handle form submission
+    document.getElementById('verifyForm').addEventListener('submit', async (event) => {
+      event.preventDefault(); // Prevent page refresh
+      const serial = document.getElementById('serial').value.trim();
+
+      // Validate input: must be a positive integer
+      if (!serial || !/^\d+$/.test(serial)) {
+        document.getElementById('result').innerText = 'Please enter a valid serial number (positive integer).';
+        return;
+      }
+
+      try {
+        // Call verifyProduct with the serial number
+        const result = await contract.methods.verifyProduct(serial).call();
+        const [serialStr, model, productionDate, isGenuine] = result;
+
+        if (isGenuine) {
+          document.getElementById('result').innerHTML = `
+            <p>Product is genuine.</p>
+            <p>Serial Number: ${serialStr}</p>
+            <p>Model: ${model}</p>
+            <p>Production Date: ${productionDate}</p>
+          `;
+        } else {
+          document.getElementById('result').innerText = 'Product is not genuine or not registered.';
+        }
+      } catch (error) {
+        console.error('Error verifying product:', error);
+        document.getElementById('result').innerText = 'Error verifying product. Check console for details.';
+      }
+    });
   </script>
 </body>
 </html>
