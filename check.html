@@ -1,30 +1,26 @@
-<!DOCTYPE html>
+j<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>He@ven Product Check</title>
   <link rel="stylesheet" href="assets/css/style.css">
-  <!-- 使用本地ethers v5 -->
-  <script src="assets/js/ethers.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <img src="assets/images/logo.jpg" alt="He@ven Logo">
-      <div class="network-alert">
-        <img src="assets/images/sepolia-mark.png" alt="Sepolia">
-        Test Network
-      </div>
-    </div>
-
-    <div class="check-card">
-      <input type="number" id="serialInput" placeholder="Enter Product Serial">
-      <button onclick="verifyProduct()">Verify Now</button>
-      <div id="result"></div>
+    <div class="check-form">
+      <img src="assets/images/logo.jpg" class="logo">
+      <h1>Verify Your Product</h1>
+      
+      <input type="number" id="serialInput" 
+             placeholder="Enter Product Serial Number">
+      <button onclick="checkProduct()">Verify Now</button>
+      
+      <div id="result" class="result-card"></div>
     </div>
   </div>
 
+  <script src="assets/js/ethers.umd.min.js"></script>
   <script>
     const contractAddress = "0x312ED575127Fe091a3f3370Af58AD9243A879c1F";
     const contractABI = [
@@ -203,67 +199,37 @@
 	}
 ];
 
-    // 初始化Web3 Provider
-    async function getProvider() {
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('Please install MetaMask');
-      }
-      
-      await window.ethereum.enable();
-      return new ethers.providers.Web3Provider(window.ethereum);
-    }
-
-    async function verifyProduct() {
+    async function checkProduct() {
       const serial = document.getElementById('serialInput').value;
-      if (!serial) return;
+      if(!serial) return;
 
       try {
-        const provider = await getProvider();
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
         
-        // 检查网络
-        const network = await provider.getNetwork();
-        if (network.chainId !== 11155111) {
-          await switchNetwork();
-          return;
-        }
-
         const contract = new ethers.Contract(
-          contractAddress,
+          contractAddress, 
           contractABI,
-          provider.getSigner()
+          provider
         );
 
-        // v5调用方式
-        const [maker, model, date, genuine] = await contract.verifyProduct(serial);
-        
-        if (genuine) {
-          window.location.href = `product.html?serial=${serial}`;
-        } else {
-          showError('Product marked as counterfeit');
-        }
-      } catch (error) {
-        showError(error.message);
-      }
-    }
+        const [maker, model, date, genuine] = 
+          await contract.verifyProduct(serial);
 
-    async function switchNetwork() {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0xaa36a7' }]
-        });
+        window.location.href = `product.html?serial=${serial}`;
       } catch (error) {
-        showError('Please manually switch to Sepolia network');
+        document.getElementById('result').innerHTML = `
+          <div class="error">
+            <p>Verification failed: ${error.message}</p>
+            <p>Please check:</p>
+            <ul>
+              <li>Correct serial number</li>
+              <li>MetaMask connection</li>
+              <li>Sepolia network</li>
+            </ul>
+          </div>
+        `;
       }
-    }
-
-    function showError(msg) {
-      document.getElementById('result').innerHTML = `
-        <div class="error-box">
-          <h3>⚠️ Verification Failed</h3>
-          <p>${msg}</p>
-        </div>
-      `;
     }
   </script>
 </body>
