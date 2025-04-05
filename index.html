@@ -80,7 +80,10 @@
             const qrcodeDiv = document.getElementById('qrcode');
             qrcodeDiv.innerHTML = '';
 
-            const verifyUrl = `https://lawrencekhleung.github.io/product-verification/?id=1001`;
+            
+            const baseUrl = "https://lawrencekhleung.github.io/product-verification/";
+            const productId = "1001";
+            const verifyUrl = `${baseUrl}?id=${productId}`;
 
             new QRCode(document.getElementById('qrcode'), verifyUrl);
         }
