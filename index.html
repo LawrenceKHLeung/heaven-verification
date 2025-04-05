@@ -80,15 +80,9 @@
             const qrcodeDiv = document.getElementById('qrcode');
             qrcodeDiv.innerHTML = '';
 
-            // Create new QR code
-            qrCode = new QRCode(qrcodeDiv, {
-                text: url,
-                width: 256,
-                height: 256,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
+            const verifyUrl = `https://lawrencekhleung.github.io/product-verification/?id=1001`;
+
+            new QRCode(document.getElementById('qrcode'), verifyUrl);
         }
     </script>
 </body>
