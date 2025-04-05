@@ -84,7 +84,8 @@
             const baseUrl = "https://lawrencekhleung.github.io/product-verification/";
             const productId = "1001";
             const verifyUrl = `${baseUrl}?id=${productId}`;
-
+            console.log("Generating QR code for URL:", verifyUrl);
+            document.getElementById('qrcode').innerHTML = ""; // Clear previous QR code
             new QRCode(document.getElementById('qrcode'), verifyUrl);
         }
     </script>
